@@ -1,0 +1,99 @@
+#docker compose -f docker-compose-eureka.yml up --build -d
+
+version: '3.8'
+
+services:
+  config-service:
+    build:
+      context: ./config-service
+      dockerfile: Dockerfile
+    container_name: config-service
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=git
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/OlivierKouokam/ecom-config-repo.git
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ecom-network
+
+  discovery-service:
+    build:
+      context: ./discovery-service
+      dockerfile: Dockerfile
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+    depends_on:
+      config-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ecom-network
+
+  customer-service:
+    build:
+      context: ./customer-service
+      dockerfile: Dockerfile
+    container_name: customer-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - SPRING_PROFILES_ACTIVE=dev # ou prod selon tes fichiers properties
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+    networks:
+      - ecom-network
+
+  inventory-service:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+    container_name: inventory-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - SPRING_PROFILES_ACTIVE=dev
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+    networks:
+      - ecom-network
+
+  gateway-service:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "30088:8888"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - SPRING_PROFILES_ACTIVE=dev
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+    networks:
+      - ecom-network
+
+networks:
+  ecom-network:
+    driver: bridge

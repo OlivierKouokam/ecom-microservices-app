@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-service
+  template:
+    metadata:
+      labels:
+        app: config-service
+    spec:
+      containers:
+      - name: config-service
+        image: olivierkkoc/config-service:latest
+        ports:
+        - containerPort: 8888
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: git
+        - name: SPRING_CLOUD_CONFIG_SERVER_GIT_URI
+          value: "https://github.com/OlivierKouokam/ecom-config-repo.git"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-service
+spec:
+  selector:
+    app: config-service
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888

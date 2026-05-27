@@ -1,0 +1,69 @@
+#docker compose up --build -d
+
+version: '3.8'
+
+services:
+  config-service:
+    build:
+      context: ./config-service
+      dockerfile: Dockerfile
+    container_name: config-service
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=git
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/OlivierKouokam/ecom-config-repo.git
+    networks:
+      - ecom-network
+
+  customer-service:
+    build:
+      context: ./customer-service
+      dockerfile: Dockerfile
+    container_name: customer-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - ecom-network
+
+  inventory-service:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+    container_name: inventory-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - ecom-network
+
+  gateway-service:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "30088:8888" # On mappe le port 30088 pour correspondre à ton futur test K8s NodePort
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - ecom-network
+
+networks:
+  ecom-network:
+    driver: bridge

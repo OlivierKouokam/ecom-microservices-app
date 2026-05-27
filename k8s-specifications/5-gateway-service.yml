@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+    spec:
+      containers:
+      - name: gateway-service
+        image: olivierkouokam/gateway-service:latest
+        ports:
+        - containerPort: 8888
+        env:
+        - name: SPRING_CONFIG_IMPORT
+          value: "optional:configserver:http://config-service:8888/"
+        - name: SPRING_PROFILES_ACTIVE
+          value: prod
+        # - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        #   value: "http://discovery-service:8761/eureka/"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+spec:
+  type: NodePort
+  selector:
+    app: gateway-service
+  ports:
+    - port: 8888
+      targetPort: 8888
+      nodePort: 30088
