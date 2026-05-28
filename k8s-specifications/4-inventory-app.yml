@@ -12,9 +12,13 @@ spec:
       labels:
         app: inventory-service
     spec:
+      initContainers:
+      - name: wait-for-config-service
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z -v -w3 config-service 8888; do echo "En attente du Config Server..."; sleep 2; done;']
       containers:
       - name: inventory-service
-        image: olivierkouokam/inventory-service:latest
+        image: olivierkkoc/inventory-service:latest
         ports:
         - containerPort: 8082
         env:

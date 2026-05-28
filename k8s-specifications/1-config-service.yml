@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: config-service
-  namespace: default
 spec:
   replicas: 1
   selector:
@@ -15,7 +14,7 @@ spec:
     spec:
       containers:
       - name: config-service
-        image: olivierkkoc/config-service:latest
+        image: olivierkkoc/ecom-config-service:latest
         ports:
         - containerPort: 8888
         env:

@@ -32,7 +32,7 @@ WORKDIR /app
 COPY --from=builder /build/target/config-service-0.0.1-SNAPSHOT.jar app.jar
 
 # Port exposé par ce service spécifique
-EXPOSE 8081
+EXPOSE 8888
 
 HEALTHCHECK --interval=5s --timeout=3s --retries=10 \
   CMD wget --quiet --tries=1 --spider http://localhost:8888/actuator/health || exit 1

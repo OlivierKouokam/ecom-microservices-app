@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: discovery-service
-        image: olivierkouokam/discovery-service:latest
+        image: olivierkkoc/discovery-service:latest
         ports:
         - containerPort: 8761
         env:

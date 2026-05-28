@@ -12,9 +12,13 @@ spec:
       labels:
         app: customer-service
     spec:
+      initContainers:
+      - name: wait-for-config-service
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z -v -w3 config-service 8888; do echo "En attente du Config Server..."; sleep 2; done;']
       containers:
       - name: customer-service
-        image: olivierkouokam/customer-service:latest
+        image: olivierkkoc/customer-service:latest
         ports:
         - containerPort: 8081
         env:
