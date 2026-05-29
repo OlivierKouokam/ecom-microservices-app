@@ -1,12 +1,12 @@
-#docker compose up --build -d
-
 version: '3.8'
+
+networks:
+  ecom-network:
+    driver: bridge
 
 services:
   config-service:
-    build:
-      context: ./config-service
-      dockerfile: Dockerfile
+    image: olivierkkoc/ecom-config-service:latest
     container_name: config-service
     ports:
       - "8888:8888"
@@ -15,55 +15,55 @@ services:
       - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/OlivierKouokam/ecom-config-repo.git
     networks:
       - ecom-network
-
-  customer-service:
-    build:
-      context: ./customer-service
-      dockerfile: Dockerfile
-    container_name: customer-service
-    ports:
-      - "8081:8081"
-    environment:
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
-      - SPRING_PROFILES_ACTIVE=prod
-    depends_on:
-      config-service:
-        condition: service_healthy
-    networks:
-      - ecom-network
-
-  inventory-service:
-    build:
-      context: ./inventory-service
-      dockerfile: Dockerfile
-    container_name: inventory-service
-    ports:
-      - "8082:8082"
-    environment:
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
-      - SPRING_PROFILES_ACTIVE=prod
-    depends_on:
-      config-service:
-        condition: service_healthy
-    networks:
-      - ecom-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   gateway-service:
-    build:
-      context: ./gateway-service
-      dockerfile: Dockerfile
+    image: olivierkkoc/ecom-gateway-service:latest
     container_name: gateway-service
     ports:
-      - "30088:8888" # On mappe le port 30088 pour correspondre à ton futur test K8s NodePort
+      - "9999:9999"
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
       - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_ENABLED=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_ID=customer-route
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_URI=http://customer-service:8081
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0=Path=/customers/**
+      - SPRING_CLOUD_GATEWAY_ROUTES_1_ID=inventory-route
+      - SPRING_CLOUD_GATEWAY_ROUTES_1_URI=http://inventory-service:8082
+      - SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0=Path=/products/**
+    networks:
+      - ecom-network
     depends_on:
       config-service:
         condition: service_healthy
+
+  customer-service:
+    image: olivierkkoc/ecom-customer-service:latest
+    container_name: customer-service
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - SPRING_PROFILES_ACTIVE=prod
     networks:
       - ecom-network
+    depends_on:
+      config-service:
+        condition: service_healthy
 
-networks:
-  ecom-network:
-    driver: bridge
+  inventory-service:
+    image: olivierkkoc/ecom-inventory-service:latest
+    container_name: inventory-service
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - SPRING_PROFILES_ACTIVE=prod
+    networks:
+      - ecom-network
+    depends_on:
+      config-service:
+        condition: service_healthy

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  namespace: ecommerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+    spec:
+      containers:
+      - name: gateway-service
+        image: olivierkkoc/ecom-gateway-service:latest # Ton image de passerelle
+        ports:
+        - containerPort: 9999
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: prod
+
+        # Désactivation du Config Server
+        - name: SPRING_CLOUD_CONFIG_ENABLED
+          value: "false"
+
+        # Désactivation complète d'Eureka
+        - name: EUREKA_CLIENT_ENABLED
+          value: "false"
+        - name: EUREKA_CLIENT_FETCH_REGISTRY
+          value: "false"
+        - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+          value: "false"
+        
+        - name: SPRING_CLOUD_GATEWAY_ROUTES_0_ID
+          value: customer-route
+        - name: SPRING_CLOUD_GATEWAY_ROUTES_0_URI
+          value: http://customer-service:8081
+        - name: SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0
+          value: Path=/customers/**
+
+        - name: SPRING_CLOUD_GATEWAY_ROUTES_1_ID
+          value: inventory-route
+        - name: SPRING_CLOUD_GATEWAY_ROUTES_1_URI
+          value: http://inventory-service:8082
+        - name: SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0
+          value: Path=/products/**
+        
+        volumeMounts:
+        - name: config-volume
+          mountPath: /config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: gateway-service-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: ecommerce
+spec:
+  type: NodePort # Ou ClusterIP / LoadBalancer selon ton architecture d'accès
+  selector:
+    app: gateway-service
+  ports:
+    - port: 9999
+      targetPort: 9999

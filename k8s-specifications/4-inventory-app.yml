@@ -18,7 +18,7 @@ spec:
         command: ['sh', '-c', 'until nc -z -v -w3 config-service 8888; do echo "En attente du Config Server..."; sleep 2; done;']
       containers:
       - name: inventory-service
-        image: olivierkkoc/inventory-service:latest
+        image: olivierkkoc/ecom-inventory-service:latest
         ports:
         - containerPort: 8082
         env:
