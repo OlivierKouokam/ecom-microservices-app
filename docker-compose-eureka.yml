@@ -83,7 +83,7 @@ services:
       dockerfile: Dockerfile
     container_name: gateway-service
     ports:
-      - "30088:8888"
+      - "9999:9999"
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
       - SPRING_PROFILES_ACTIVE=dev
