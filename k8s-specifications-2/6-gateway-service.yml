@@ -34,20 +34,24 @@ spec:
         - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
           value: "false"
         
-        - name: SPRING_CLOUD_GATEWAY_ROUTES_0_ID
-          value: customer-route
-        - name: SPRING_CLOUD_GATEWAY_ROUTES_0_URI
-          value: http://customer-service:8081
-        - name: SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0
-          value: Path=/customers/**
+        # - name: SPRING_CLOUD_GATEWAY_ROUTES_0_ID
+        #   value: customer-route
+        # - name: SPRING_CLOUD_GATEWAY_ROUTES_0_URI
+        #   value: http://customer-service:8081
+        # - name: SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0
+        #   value: Path=/customers/**
 
-        - name: SPRING_CLOUD_GATEWAY_ROUTES_1_ID
-          value: inventory-route
-        - name: SPRING_CLOUD_GATEWAY_ROUTES_1_URI
-          value: http://inventory-service:8082
-        - name: SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0
-          value: Path=/products/**
+        # - name: SPRING_CLOUD_GATEWAY_ROUTES_1_ID
+        #   value: inventory-route
+        # - name: SPRING_CLOUD_GATEWAY_ROUTES_1_URI
+        #   value: http://inventory-service:8082
+        # - name: SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0
+        #   value: Path=/products/**
         
+        # On force Spring à charger le fichier du ConfigMap
+        - name: SPRING_CONFIG_LOCATION
+          value: "file:/config/application.yml"
+          
         volumeMounts:
         - name: config-volume
           mountPath: /config
